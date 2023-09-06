@@ -61,7 +61,7 @@ myFunction <- function(trafficMatrix, carInfo, packageMatrix) {
   } else {
     carInfo$mem$goal <- packageMatrix[carInfo$load, c(3, 4)]
   }
-  
+
   if (carInfo$x == carInfo$mem$goal[[1]] && carInfo$y == carInfo$mem$goal[[2]]) {
     carInfo$nextMove <- 5
     return(carInfo)
@@ -130,7 +130,7 @@ g <- function(carInfo, frontierNode, trafficMatrix) {
 
 
 f <- function(carInfo, frontierNode, trafficMatrix) {
-  return(g(carInfo, frontierNode, trafficMatrix) + h(carInfo, frontierNode) * 2)
+  return(g(carInfo, frontierNode, trafficMatrix) + h(carInfo, frontierNode) * 3)
 }
 
 carCords <- function(carInfo) {
@@ -147,7 +147,7 @@ getNeighbors <- function(carNode, dim) {
     neighbors <- append(neighbors, list(c(x - 1, y)))
   }
 
-  if (x < dim) {
+  if (x <= dim) {
     neighbors <- append(neighbors, list(c(x + 1, y)))
   }
 
@@ -155,7 +155,7 @@ getNeighbors <- function(carNode, dim) {
     neighbors <- append(neighbors, list(c(x, y - 1)))
   }
 
-  if (y < dim) {
+  if (y <= dim) {
     neighbors <- append(neighbors, list(c(x, y + 1)))
   }
 
@@ -171,6 +171,7 @@ aStar <- function(trafficMatrix, carInfo, packageMatrix) {
   # add start node to queue
   # node looks like [carCoords, cost, path]
   startNode <- list(cords = carCords(carInfo), cost = 0, path = list())
+  visited <- list()
 
   q$enqueue(startNode, 0)
 
@@ -180,11 +181,13 @@ aStar <- function(trafficMatrix, carInfo, packageMatrix) {
     cords <- frontierNode$cords
     cost <- frontierNode$cost
     path <- frontierNode$path
-    
+
     # check if goal
     if (all(cords == carInfo$mem$goal)) {
       return(path)
     }
+
+    visited <- append(visited, list(cords))
 
     # get neighbors
     gridDim <- nrow(trafficMatrix$hroads)
@@ -192,6 +195,9 @@ aStar <- function(trafficMatrix, carInfo, packageMatrix) {
 
     # add neighbors to queue
     for (i in 1:length(neighbors)) {
+      if (any(sapply(visited, function(x) all(x == neighbors[[i]])))) {
+        next
+      }
       neighbor <- neighbors[[i]]
       newCost <- cost + f(carInfo, neighbor, trafficMatrix)
       q$enqueue(list(cords = neighbor, cost = newCost, path = c(path, list(neighbor))), newCost)
