@@ -61,22 +61,23 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix){
     currentPath = currentNode$path
     
     nodeRight <- c(posX = posRight[1],posY=posRight[2], cost = 0, manhattan = manhattanDistance(posRight, targetPos), path = append(currentPath, posRight, after=(length(currentPath))))
-    nodeUp <- c(pos = posUp, cost = 0, manhattan = manhattanDistance(posUp, targetPos), path = append(currentPath, posUp, after=(length(currentPath))))
-    nodeLeft <- c(pos = posLeft, cost = 0, manhattan = manhattanDistance(posLeft, targetPos), path = append(currentPath, posLeft, after=(length(currentPath))))
-    nodeDown <- c(pos = posDown, cost = 0, manhattan = manhattanDistance(posDown, targetPos), path = append(currentPath, posDown, after=(length(currentPath))))
+    nodeUp <- c(posX = posUp[1],posY=posUp[2], cost = 0, manhattan = manhattanDistance(posUp, targetPos), path = append(currentPath, posUp, after=(length(currentPath))))
+    nodeLeft <- c(posX = posLeft[1],posY=posLeft[2], cost = 0, manhattan = manhattanDistance(posLeft, targetPos), path = append(currentPath, posLeft, after=(length(currentPath))))
+    nodeDown <- c(posX = posDown[1],posY=posDown[2], cost = 0, manhattan = manhattanDistance(posDown, targetPos), path = append(currentPath, posDown, after=(length(currentPath))))
     
-    nodeList <- c(nodeRight,nodeUp,nodeLeft,nodeDown)
+    nodeList <- list(nodeRight,nodeUp,nodeLeft,nodeDown)
     
     
-    for(i in 1:length(nodeList)){
-      nodeToCheck <- nodeList[i]
-      print(nodeToCheck)
-      y <- nodeList[["posY"]]
+    for (i in 1:length(nodeList)) {
+      nodeToCheck <- nodeList[[i]]
+      posX <- nodeToCheck["posX"]
+      posY <- nodeToCheck["posY"]
       
-      if(validPosition(x,y)){
-        print(nodeToCheck)
+      if(validPosition(posX, posY)){
+        print(posX)
       }
     }
+    
         
       
     
@@ -91,8 +92,6 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix){
 }
 
 validPosition <- function(posX,posY){
-  print(posX)
-  print(posY)
   if (posX > 10 || posX < 1 || posY < 1 || posY > 10 ){
     return(FALSE)
   }
