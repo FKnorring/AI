@@ -73,15 +73,17 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix){
       posX <- nodeToCheck["posX"]
       posY <- nodeToCheck["posY"]
       
-      if(validPosition(posX, posY)){
-        print(posX)
-      }
+      # check if node in visitedNodes
+      if(!visited(posX,posY,visitedNodes) && validPosition(posX,posY)){
+          # Append the node to the frontier
+        visitedNodes <- c(visitedNodes, nodeToCheck)
+         # vill vi checka om den ligger i frontier??
+          frontier <- c(frontier, nodeToCheck)
+          
     }
-    
-        
       
-    
-    
+    } 
+   # findBestNode(frontier)
     # Lägg till noden i openSet (skapa den osv)
     # Kolla om den inte ligger där redan.
     # Kolla isf om nya vägen är billigare, skriv över med den.
@@ -90,6 +92,23 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix){
     return(1)
   }
 }
+
+findBestNode <- function(frontier){
+  ## HÄR MÅSTE VI KOLLA TRAFFIC MATRIX??
+}
+
+visited <- function(posX, posY, visitedNodes) {
+  for (i in 1:length(visitedNodes)) {
+    if (!is.null(visitedNodes[[i]]) && !is.null(visitedNodes[i]$posX) && !is.null(visitedNodes[i]$posY)) {
+      if (posX == visitedNodes[i]$posX && posY == visitedNodes[i]$posY) {
+        return(TRUE)
+      }
+    }
+  }
+  return(FALSE)
+}
+
+
 
 validPosition <- function(posX,posY){
   if (posX > 10 || posX < 1 || posY < 1 || posY > 10 ){
