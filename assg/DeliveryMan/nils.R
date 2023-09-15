@@ -2,15 +2,23 @@ library("DeliveryMan")
 
 myFunction <- function(trafficMatrix, carInfo, packageMatrix) {
   # Vi har ett paket
-  if(carInfo$load != 0){
+  if(carInfo$load == 0){
+    carInfo$mem$target <- findBestPackage(carInfo, packageMatrix)
+    if(carInfo$mem$target[1] == 1 && carInfo$mem$target[2] == 1){
+      print("wtf")
+      carInfo$mem$goal <- c(carInfo$mem$target[3], carInfo$mem$target[4])
+    }
+    else{
+      carInfo$mem$goal <- c(carInfo$mem$target[1], carInfo$mem$target[2])
+    }
     carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
-    return (carInfo)
+    return(carInfo)
   }
   # Vi har inte ett paket
   else {
-    carInfo$mem$target <- findBestPackage(carInfo, packageMatrix)
-    carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
-    return(carInfo)
+    carInfo$mem$goal <- packageMatrix[carInfo$load, c(3, 4)]
+    carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix)
+    return (carInfo)
     # hitta bäst väg dit
   }
   return (carInfo)
@@ -28,13 +36,7 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
   carPos <- c(carInfo$x, carInfo$y)
   
   # targetPos should be either pickup or delivery location, currently only pickup
-  if(carInfo$load !=0){
-    targetPos <- c(carInfo$mem$target[3], carInfo$mem$target[4])
-  }
-  else{
-    targetPos <- c(carInfo$mem$target[1], carInfo$mem$target[2])
-    
-  }
+  targetPos <- carInfo$mem$goal
   
   # A node is [posX, posY, cost(g+h), manhattanToTarget, path]
   startNode <- list(
@@ -57,8 +59,13 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
     visitedNodes <- append(visitedNodes, list(currentNode))
     frontier <- frontier[-lowestCostIndex]
     
-    print(currentNode)
-    if (currentNode[["manhattan"]] == 0) {
+    if (is.null(currentNode[["manhattan"]]) || length(currentNode[["manhattan"]]) <= 0){
+      print(currentNode)
+      print(targetPos)
+      print(packageMatrix)
+    }
+    
+    if (currentNode[["manhattan"]] == 0 ) {
       # Calculate the direction code based on the difference in coordinates
       
       if (length(currentNode[["path"]]) >= 2) {
@@ -121,6 +128,8 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
         if (!nodeExistsIn(posX, posY, frontier)) {
           frontier <- append(frontier, list(newNode))
         }
+        #else if a node with the same posX, posY exists in frontier
+        # but it has a higher cost, replace that node with
       }
     }
   }
@@ -131,20 +140,6 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
 
 findBestNode <- function(frontier){
   ## HÄR MÅSTE VI KOLLA TRAFFIC MATRIX??
-}
-
-visited <- function(posX, posY, visitedNodes) {
-  for (i in 1:length(visitedNodes)) {
-    if(length(visitedNodes) == 0){
-      return (FALSE)
-    }
-    if (!is.null(visitedNodes[[i]]) && !is.null(visitedNodes[i]$posX) && !is.null(visitedNodes[i]$posY)) {
-      if (posX == visitedNodes[i]$posX && posY == visitedNodes[i]$posY) {
-        return(TRUE)
-      }
-    }
-  }
-  return(FALSE)
 }
 
 nodeExistsIn <- function(posXToCheck,posYToCheck, frontier) {
@@ -190,6 +185,7 @@ findBestPackage <- function(carInfo, packageMatrix){
     } 
     index <- index + 1
   }
+  
   return(bestPackage) 
 }
 
