@@ -2,21 +2,17 @@ library("DeliveryMan")
 
 myFunction <- function(trafficMatrix, carInfo, packageMatrix) {
   # Vi har ett paket
-  if(carInfo$load == 1){
-    if(correctPlace){
-      carInfo$nextMove <- 5
-    }
-    else {
-      # Vi har paket, hitta bäst vägen till dropoff
-    } 
+  if(carInfo$load != 0){
+    carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
+    return (carInfo)
   }
   # Vi har inte ett paket
   else {
     carInfo$mem$target <- findBestPackage(carInfo, packageMatrix)
-    temp <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
+    carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
+    return(carInfo)
     # hitta bäst väg dit
   }
-  carInfo$nextMove <- 2
   return (carInfo)
 }
 
@@ -26,71 +22,111 @@ manhattanDistance <- function(pos1, pos2){
 }
 
 # Finds the best path using the A* algorithm and returns the next move as an integer
-findBestRoute <- function(trafficMatrix, carInfo, packageMatrix){
+findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
   frontier <- list()
   visitedNodes <- list()
-  carPos <- c(carInfo$x,carInfo$y)
+  carPos <- c(carInfo$x, carInfo$y)
   
   # targetPos should be either pickup or delivery location, currently only pickup
-  targetPos <- c(carInfo$mem$target[1],carInfo$mem$target[2])
-  # A node is [nodeX,nodeY, cost(g+h), manhattanToTarget, path]
-  startNode <- c(posX = carInfo$x, posY=carInfo$y,cost = 0, manhattan = manhattanDistance(carPos, targetPos), path = list())
-  frontier[[length(frontier)+1]] <- startNode
-  
-  while(1){
-    # Find the best cost score node in the frontier set
-    costs=sapply(frontier,function(item)item$cost)
-    lowestCostIndex = which.min(costs)
-    currentNode = frontier[[lowestCostIndex]]
-    # Move the node from frontier to visitedNodes
-    visitedNodes[[length(visitedNodes)+1]] <- currentNode
-    frontier[-lowestCostIndex]
-    
-    
-    if (currentNode$manhattan == 0){
-      # Return first step in path
-    }
-  
-    
-    
-    # Expanding and creating the nodes for neighbours
-    posRight <- c(carInfo$x+1,carInfo$y)
-    posUp <- c(carInfo$x,carInfo$y+1)
-    posLeft <- c(carInfo$x-1,carInfo$y)
-    posDown <- c(carInfo$x,carInfo$y-1)
-    currentPath = currentNode$path
-    
-    nodeRight <- c(posX = posRight[1],posY=posRight[2], cost = 0, manhattan = manhattanDistance(posRight, targetPos), path = append(currentPath, posRight, after=(length(currentPath))))
-    nodeUp <- c(posX = posUp[1],posY=posUp[2], cost = 0, manhattan = manhattanDistance(posUp, targetPos), path = append(currentPath, posUp, after=(length(currentPath))))
-    nodeLeft <- c(posX = posLeft[1],posY=posLeft[2], cost = 0, manhattan = manhattanDistance(posLeft, targetPos), path = append(currentPath, posLeft, after=(length(currentPath))))
-    nodeDown <- c(posX = posDown[1],posY=posDown[2], cost = 0, manhattan = manhattanDistance(posDown, targetPos), path = append(currentPath, posDown, after=(length(currentPath))))
-    
-    nodeList <- list(nodeRight,nodeUp,nodeLeft,nodeDown)
-    
-    
-    for (i in 1:length(nodeList)) {
-      nodeToCheck <- nodeList[[i]]
-      posX <- nodeToCheck["posX"]
-      posY <- nodeToCheck["posY"]
-      
-      # check if node in visitedNodes
-      if(!visited(posX,posY,visitedNodes) && validPosition(posX,posY)){
-          # Append the node to the frontier
-        visitedNodes <- c(visitedNodes, nodeToCheck)
-         # vill vi checka om den ligger i frontier??
-          frontier <- c(frontier, nodeToCheck)
-          
-    }
-      
-    } 
-   # findBestNode(frontier)
-    # Lägg till noden i openSet (skapa den osv)
-    # Kolla om den inte ligger där redan.
-    # Kolla isf om nya vägen är billigare, skriv över med den.
-    
-      
-    return(1)
+  if(carInfo$load !=0){
+    targetPos <- c(carInfo$mem$target[3], carInfo$mem$target[4])
   }
+  else{
+    targetPos <- c(carInfo$mem$target[1], carInfo$mem$target[2])
+    
+  }
+  
+  # A node is [posX, posY, cost(g+h), manhattanToTarget, path]
+  startNode <- list(
+    posX = carInfo$x, 
+    posY = carInfo$y, 
+    cost = 0, 
+    manhattan = manhattanDistance(carPos, targetPos), 
+    path = list(c(carInfo$x, carInfo$y))
+  )
+  
+  frontier <- list(startNode)
+  
+  while (length(frontier) > 0) {
+    # Find the best cost score node in the frontier set
+    costs <- sapply(frontier, function(item) item[["cost"]])
+    lowestCostIndex <- which.min(costs)
+    currentNode <- frontier[[lowestCostIndex]]
+    
+    # Move the node from frontier to visitedNodes
+    visitedNodes <- append(visitedNodes, list(currentNode))
+    frontier <- frontier[-lowestCostIndex]
+    
+    print(currentNode)
+    if (currentNode[["manhattan"]] == 0) {
+      # Calculate the direction code based on the difference in coordinates
+      
+      if (length(currentNode[["path"]]) >= 2) {
+        diffX <- currentNode[["path"]][[2]][1] - carInfo$x
+        diffY <- currentNode[["path"]][[2]][2] - carInfo$y
+      } else {
+        diffX <- 0
+        diffY <- 0
+      }
+      
+      if (diffX == 0 && diffY == 0) {
+        return(5)  # Still
+      } else if (diffX == 0 && diffY > 0) {
+        return(8)  # Up
+      } else if (diffX == 0 && diffY < 0) {
+        return(2)  # Down
+      } else if (diffX > 0 && diffY == 0) {
+        return(6)  # Right
+      } else if (diffX < 0 && diffY == 0) {
+        return(4)  # Left
+      }
+    }
+      
+    
+    # Expanding and creating the nodes for neighbors
+    posRight <- c(currentNode[["posX"]] + 1, currentNode[["posY"]])
+    posUp <- c(currentNode[["posX"]], currentNode[["posY"]] + 1)
+    posLeft <- c(currentNode[["posX"]] - 1, currentNode[["posY"]])
+    posDown <- c(currentNode[["posX"]], currentNode[["posY"]] - 1)
+    
+    positions <- list(posRight, posUp, posLeft, posDown)
+    
+    for (i in 1:4) {
+      posX <- positions[[i]][1]
+      posY <- positions[[i]][2]
+      
+      if (!nodeExistsIn(posX, posY, visitedNodes) && validPosition(posX, posY)) {
+        costToNode <- NULL
+        if (i == 1) {
+          costToNode <- trafficMatrix$hroads[posX-1, posY]
+        } else if (i == 2) {
+          costToNode <- trafficMatrix$vroads[posX, posY - 1]
+        } else if (i == 3) {
+          costToNode <- trafficMatrix$hroads[posX, posY]
+        } else if (i == 4) {
+          costToNode <- trafficMatrix$vroads[posX, posY]
+        }
+        
+        newCost <- currentNode[["cost"]] + costToNode
+        newManhattan <- manhattanDistance(c(posX, posY), targetPos)
+        
+        newNode <- list(
+          posX = posX,
+          posY = posY,
+          cost = newCost,
+          manhattan = newManhattan,
+          path = append(currentNode[["path"]], list(c(posX, posY)))
+        )
+        
+        if (!nodeExistsIn(posX, posY, frontier)) {
+          frontier <- append(frontier, list(newNode))
+        }
+      }
+    }
+  }
+  
+  # Return an empty path if no path is found
+  return(list())
 }
 
 findBestNode <- function(frontier){
@@ -99,6 +135,9 @@ findBestNode <- function(frontier){
 
 visited <- function(posX, posY, visitedNodes) {
   for (i in 1:length(visitedNodes)) {
+    if(length(visitedNodes) == 0){
+      return (FALSE)
+    }
     if (!is.null(visitedNodes[[i]]) && !is.null(visitedNodes[i]$posX) && !is.null(visitedNodes[i]$posY)) {
       if (posX == visitedNodes[i]$posX && posY == visitedNodes[i]$posY) {
         return(TRUE)
@@ -108,6 +147,23 @@ visited <- function(posX, posY, visitedNodes) {
   return(FALSE)
 }
 
+nodeExistsIn <- function(posXToCheck,posYToCheck, frontier) {
+  #posXToCheck <- nodeToCheck[["posX"]]
+  #posYToCheck <- nodeToCheck[["posY"]]
+  
+  if (length(frontier) == 0) {
+    return(FALSE)
+  }
+  
+  for (i in 1:length(frontier)) {
+    nodeInFrontier <- frontier[[i]]
+    if (nodeInFrontier[["posX"]] == posXToCheck && nodeInFrontier[["posY"]] == posYToCheck) {
+      return(TRUE)
+    }
+  }
+  
+  return(FALSE)
+}
 
 
 validPosition <- function(posX,posY){
