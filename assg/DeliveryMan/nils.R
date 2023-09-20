@@ -1,32 +1,25 @@
 library("DeliveryMan")
 
 myFunction <- function(trafficMatrix, carInfo, packageMatrix) {
-  # Vi har ett paket
+  # We have no package
   if(carInfo$load == 0){
     carInfo$mem$target <- findBestPackage(carInfo, packageMatrix)
-    if(carInfo$mem$target[1] == 1 && carInfo$mem$target[2] == 1){
-      print("wtf")
-      carInfo$mem$goal <- c(carInfo$mem$target[3], carInfo$mem$target[4])
-    }
-    else{
-      carInfo$mem$goal <- c(carInfo$mem$target[1], carInfo$mem$target[2])
-    }
+    carInfo$mem$goal <- c(carInfo$mem$target[1], carInfo$mem$target[2])
     carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix )
     return(carInfo)
   }
-  # Vi har inte ett paket
+  # We have a package
   else {
     carInfo$mem$goal <- packageMatrix[carInfo$load, c(3, 4)]
     carInfo$nextMove <- findBestRoute(trafficMatrix,carInfo,packageMatrix)
     return (carInfo)
-    # hitta bäst väg dit
   }
   return (carInfo)
 }
 
-manhattanDistance <- function(pos1, pos2){
-  distance <- abs(pos1[1]-pos2[1]) + abs(pos1[2]-pos2[2])
-  return (distance)
+# Finds the manhattan distance between two points
+manhattanDistance <- function(pos1, pos2) {
+  return (sum(abs(pos1 - pos2)))
 }
 
 # Finds the best path using the A* algorithm and returns the next move as an integer
@@ -34,8 +27,7 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
   frontier <- list()
   visitedNodes <- list()
   carPos <- c(carInfo$x, carInfo$y)
-  
-  # targetPos should be either pickup or delivery location, currently only pickup
+
   targetPos <- carInfo$mem$goal
   
   # A node is [posX, posY, cost(g+h), manhattanToTarget, path]
@@ -59,15 +51,10 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
     visitedNodes <- append(visitedNodes, list(currentNode))
     frontier <- frontier[-lowestCostIndex]
     
-    if (is.null(currentNode[["manhattan"]]) || length(currentNode[["manhattan"]]) <= 0){
-      print(currentNode)
-      print(targetPos)
-      print(packageMatrix)
-    }
-    
+    # Check if we have reached the target
     if (currentNode[["manhattan"]] == 0 ) {
-      # Calculate the direction code based on the difference in coordinates
       
+      # Calculate the direction code based on the difference in coordinates from
       if (length(currentNode[["path"]]) >= 2) {
         diffX <- currentNode[["path"]][[2]][1] - carInfo$x
         diffY <- currentNode[["path"]][[2]][2] - carInfo$y
@@ -88,7 +75,7 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
         return(4)  # Left
       }
     }
-      
+    
     
     # Expanding and creating the nodes for neighbors
     posRight <- c(currentNode[["posX"]] + 1, currentNode[["posY"]])
@@ -128,24 +115,19 @@ findBestRoute <- function(trafficMatrix, carInfo, packageMatrix) {
         if (!nodeExistsIn(posX, posY, frontier)) {
           frontier <- append(frontier, list(newNode))
         }
-        #else if a node with the same posX, posY exists in frontier
-        # but it has a higher cost, replace that node with
+        # Could also check if the node already exists but with a higher cost, could
+        # replace that node with this one, possibly increasing the score
       }
     }
   }
   
-  # Return an empty path if no path is found
-  return(list())
+  print("Something went wrong")
+  return(5)
 }
 
-findBestNode <- function(frontier){
-  ## HÄR MÅSTE VI KOLLA TRAFFIC MATRIX??
-}
 
+# Check if the x and y coordinates exists in a node in the frontier list
 nodeExistsIn <- function(posXToCheck,posYToCheck, frontier) {
-  #posXToCheck <- nodeToCheck[["posX"]]
-  #posYToCheck <- nodeToCheck[["posY"]]
-  
   if (length(frontier) == 0) {
     return(FALSE)
   }
@@ -156,11 +138,10 @@ nodeExistsIn <- function(posXToCheck,posYToCheck, frontier) {
       return(TRUE)
     }
   }
-  
   return(FALSE)
 }
 
-
+# Checks if the position x,y is valid (inside the board)
 validPosition <- function(posX,posY){
   if (posX > 10 || posX < 1 || posY < 1 || posY > 10 ){
     return(FALSE)
@@ -168,8 +149,7 @@ validPosition <- function(posX,posY){
   return(TRUE)
 }
 
-# Finds the best package location and returns its information
-# Could try to calculate a weighted with its distance to the dropoff aswell
+# Finds a package that hasn't been picked up with the lowest manhattan distance to. 
 findBestPackage <- function(carInfo, packageMatrix){
   index <- 1
   shortestDistance <- 200
@@ -188,8 +168,3 @@ findBestPackage <- function(carInfo, packageMatrix){
   
   return(bestPackage) 
 }
-
-
-
-runDeliveryMan(carReady = myFunction)
-
