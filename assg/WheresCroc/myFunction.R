@@ -9,12 +9,26 @@ myFunction = function(moveInfo,readings,positions,edges,probs){
   for (i in 1:40){
     new_sprob[i] <- get_new_probabilities(readings, probs,node,edges,i,sprob,state_space)
   }
-  
+  # Check for travelers
+  if(!is.na(positions[1])){
+    if(positions[1] < 0){
+      new_sprob <- rep(0,40)
+      new_sprob[-1*positions[1]] = 1
+    }else{
+      new_sprob[positions[1]] = 0
+    }
+  } else if (!is.na(positions[2])){
+    if(positions[2] < 0){
+      new_sprob <- rep(0,40)
+      new_sprob[-1*positions[2]] = 1
+    }else{
+      new_sprob[positions[2]] = 0
+    }
+  }
   moveInfo$mem$sprob = new_sprob
   goal = which.max(new_sprob)
   move = get_move(goal,edges,positions[3])
   moveInfo$moves = move
-  #moveInfo$moves=c(sample(getOptions(positions[3],edges),1),0)
   return(moveInfo)
 }
 
@@ -95,7 +109,7 @@ get_emissions = function(readings, probs) {
   product = prob_salinity * prob_phosphate * prob_nitrogen
   
   sum_product = sum(product)
-
+  
   normalized_probs = product / sum_product
   return(normalized_probs)
 }
