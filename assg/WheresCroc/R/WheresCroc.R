@@ -1,3 +1,6 @@
+#write a function h
+myFunction=function()
+
 #' randomWC
 #'
 #' Control function for Where's Croc where moves are random.

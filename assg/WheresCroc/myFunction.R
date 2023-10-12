@@ -4,10 +4,18 @@ myFunction = function(moveInfo,readings,positions,edges,probs){
     moveInfo$mem$sprob = init_probabilities(positions)
   }
   sprob = moveInfo$mem$sprob
+  new_sprob <- forward_markov(sprob,readings,probs,node,edges,positions)
+  moveInfo$mem$sprob = new_sprob
+  goal = which.max(new_sprob)
+  moveInfo$moves = get_move(goal,edges,positions[3])
+  return(moveInfo)
+}
+
+forward_markov = function(sprob,readings,probs,node,edges,positions){
   new_sprob <- rep(0,40)
-  state_space = get_emissions(readings,probs)
+  emissions = get_emissions(readings,probs)
   for (i in 1:40){
-    new_sprob[i] <- get_new_probabilities(readings, probs,node,edges,i,sprob,state_space)
+    new_sprob[i] <- get_new_probabilities(readings, probs,node,edges,i,sprob,emissions)
   }
   # Check for travelers
   if(!is.na(positions[1])){
@@ -25,15 +33,12 @@ myFunction = function(moveInfo,readings,positions,edges,probs){
       new_sprob[positions[2]] = 0
     }
   }
-  moveInfo$mem$sprob = new_sprob
-  goal = which.max(new_sprob)
-  move = get_move(goal,edges,positions[3])
-  moveInfo$moves = move
-  return(moveInfo)
+  new_sprob <- new_sprob / sum(new_sprob)
+  return (new_sprob)
 }
 
 get_move = function(goal,edges,position){
-  # Check if goal is in neighbours (or same node)
+  # Check if goal is in neighbours or is this node)
   neighbours = getNeighbours(position,edges)
   if(goal %in% neighbours){
     return (c(goal,0))
@@ -47,7 +52,7 @@ bfs_shortest_path <- function(start, goal, edges) {
   queue = c(start)
   parents = replicate(40, 0)
   visited = c(start)
-  parents[start] = 100
+  parents[start] = 100 # To find it later
   while(length(queue) != 0){
     current = head(queue,n=1)
     queue = setdiff(queue, c(current))
@@ -82,13 +87,13 @@ get_node_probabilities = function( edges,position){
   return (value)
 }
 
-get_new_probabilities = function(readings,probs,node,edges,position, sprob,state_space){
+get_new_probabilities = function(readings,probs,node,edges,position, sprob,e){
   neighbours = getNeighbours(position,edges)
   sum = 0
   for(neighbour in neighbours){
     sum = sum + get_node_probabilities(edges,neighbour) * sprob[neighbour]
   }
-  return (sum * state_space[position])
+  return (sum * e[position])
 }
 
 init_probabilities = function(positions){
@@ -109,7 +114,7 @@ get_emissions = function(readings, probs) {
   product = prob_salinity * prob_phosphate * prob_nitrogen
   
   sum_product = sum(product)
-  
   normalized_probs = product / sum_product
+  
   return(normalized_probs)
 }
